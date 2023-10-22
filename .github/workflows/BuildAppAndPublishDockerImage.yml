@@ -53,13 +53,7 @@ jobs:
           distribution: 'temurin'
           architecture: x64
           cache: maven
-      - name: Run the Maven verify phase
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-        run: mvn --batch-mode --update-snapshots verify
+      - run: mvn --batch-mode --update-snapshots verify
 
 
       # Set up BuildKit Docker container builder to be able to build
