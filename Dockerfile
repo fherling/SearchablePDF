@@ -6,9 +6,8 @@ USER root
 RUN apt update
 
 
-RUN apt install curl git inotify-tools file maven -y
+RUN apt install curl inotify-tools file unzip -y
 
-#RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o "awscliv2.zip"
 
 
@@ -19,8 +18,6 @@ RUN mkdir /ocr-input
 RUN mkdir /ocr-output
 COPY ./ocr-scripts /ocr-scripts
 COPY target/searchable-pdf-1.0.jar /ocr-scripts/searchable-pdf-1.0.jar
-
-
 
 RUN useradd -m -u 1000 appuser
 RUN chown -R appuser:appuser /ocr-scripts
