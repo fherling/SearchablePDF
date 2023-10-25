@@ -1,4 +1,5 @@
-FROM openjdk:22-ea-17-jdk-bullseye
+ARG ARCH=
+FROM ${ARCH}openjdk:22-ea-17-jdk-bullseye
 
 # Install dependencies
 USER root
