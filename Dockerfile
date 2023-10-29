@@ -19,11 +19,11 @@ RUN mkdir /ocr-output
 COPY ./ocr-scripts /ocr-scripts
 COPY target/searchable-pdf-1.0.jar /ocr-scripts/searchable-pdf-1.0.jar
 
-RUN useradd -m -u 1000 appuser
-RUN chown -R appuser:appuser /ocr-scripts
+#RUN useradd -m -u 1000 appuser
+#RUN chown -R appuser:appuser /ocr-scripts
 
 WORKDIR /ocr-scripts
-USER appuser
+#USER appuser
 
 
 ENTRYPOINT [ "/ocr-scripts/watch-files.sh" ]
