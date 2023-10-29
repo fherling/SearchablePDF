@@ -10,7 +10,7 @@ if [  -f "$inputfile" ]; then
     outputfilename=$(basename "$inputfile")
     outputdirectory=$(dirname "$inputfile")
     outputdirectory="${outputdirectory//ocr-input/ocr-output}"
-    outputdirectory="$outputdirectory/$tagesdatum"
+    outputdirectory="$outputdirectory/aws/$tagesdatum"
     mkdir -p "$outputdirectory"
     outputfile=$outputdirectory/$outputfilename
     echo "OCR-output $outputfile"
