@@ -1,5 +1,5 @@
 ARG ARCH=
-FROM ${ARCH}openjdk:22-ea-17-jdk-slim-bullseye
+FROM ${ARCH}openjdk:22-ea-21-jdk-slim-bullseye
 
 # Install dependencies
 USER root
