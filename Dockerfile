@@ -19,11 +19,19 @@ RUN mkdir /ocr-output
 COPY ./ocr-scripts /ocr-scripts
 COPY target/searchable-pdf-1.0.jar /ocr-scripts/searchable-pdf-1.0.jar
 
-#RUN useradd -m -u 1000 appuser
-#RUN chown -R appuser:appuser /ocr-scripts
+
+RUN addgroup --gid 65538 ocrgroup
+
+# Create a user 'appuser' under 'ocrgroup'
+RUN adduser  --uid 1039 --gid 65538 --disabled-password --gecos "" ocruser
+
+# Chown all the files to the app user.
+RUN chown -R ocruser:ocrgroup /ocr-scripts
+
+# Switch to 'appuser'
+USER ocruser
 
 WORKDIR /ocr-scripts
-#USER appuser
 
 
 ENTRYPOINT [ "/ocr-scripts/watch-files.sh" ]
