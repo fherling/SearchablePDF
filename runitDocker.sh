@@ -1,3 +1,4 @@
+
 USED_REGION=eu-central-1
 
 mvn clean package

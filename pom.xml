@@ -81,11 +81,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-<<<<<<< HEAD
                 <version>3.6.0</version>
-=======
-                <version>3.5.3</version>
->>>>>>> 62d0013 (new dependencies)
                 <configuration>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                 </configuration>
