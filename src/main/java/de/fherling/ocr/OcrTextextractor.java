@@ -1,9 +1,9 @@
 package de.fherling.ocr;
 
 import com.amazon.textract.pdf.TextLine;
-import com.amazonaws.services.textract.AmazonTextract;
-import com.amazonaws.services.textract.AmazonTextractClientBuilder;
-import com.amazonaws.services.textract.model.*;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.textract.TextractClient;
+import software.amazon.awssdk.services.textract.model.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -18,28 +18,31 @@ public class OcrTextextractor {
      */
     public List<TextLine> extractText(ByteBuffer imageBytes){
 
-        AmazonTextract client = AmazonTextractClientBuilder.defaultClient();
+        try (TextractClient client = TextractClient.builder().build()) {
 
-        DetectDocumentTextRequest request = new DetectDocumentTextRequest()
-                .withDocument(new Document()
-                        .withBytes(imageBytes));
+            DetectDocumentTextRequest request = DetectDocumentTextRequest.builder()
+                    .document(Document.builder()
+                            .bytes(SdkBytes.fromByteBuffer(imageBytes))
+                            .build())
+                    .build();
 
-        DetectDocumentTextResult result = client.detectDocumentText(request);
+            DetectDocumentTextResponse result = client.detectDocumentText(request);
 
-        List<TextLine> lines = new ArrayList<>();
-        List<Block> blocks = result.getBlocks();
-        BoundingBox boundingBox;
-        for (Block block : blocks) {
-            if (block.getBlockType().equals("LINE")) {
-                boundingBox = block.getGeometry().getBoundingBox();
-                lines.add(new TextLine(boundingBox.getLeft(),
-                        boundingBox.getTop(),
-                        boundingBox.getWidth(),
-                        boundingBox.getHeight(),
-                        block.getText()));
+            List<TextLine> lines = new ArrayList<>();
+            List<Block> blocks = result.blocks();
+            BoundingBox boundingBox;
+            for (Block block : blocks) {
+                if (block.blockType() == BlockType.LINE) {
+                    boundingBox = block.geometry().boundingBox();
+                    lines.add(new TextLine(boundingBox.left(),
+                            boundingBox.top(),
+                            boundingBox.width(),
+                            boundingBox.height(),
+                            block.text()));
+                }
             }
-        }
 
-        return lines;
+            return lines;
+        }
     }
 }
