@@ -1,5 +1,6 @@
 package de.fherling.ocr;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -12,6 +13,7 @@ class OcrPdfFromLocalPdfTest {
     OcrPdfFromLocalPdf cut = new OcrPdfFromLocalPdf();
 
     @Test
+    @Disabled("Only for manual testing")
     void doOcr() throws IOException {
 
         cut.doOcr("src/test/resources/ocr-test.pdf", "target/ocr-test-result.pdf");
