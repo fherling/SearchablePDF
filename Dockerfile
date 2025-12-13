@@ -1,37 +1,44 @@
-ARG ARCH=
-FROM ${ARCH}openjdk:22-ea-21-jdk-slim-bullseye
+# Build stage - compile and package the application
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /build
 
-# Install dependencies
-USER root
-RUN apt update
+# Copy Maven files first for better layer caching
+COPY pom.xml .
+COPY src ./src
 
+# Build the application and copy dependencies
+RUN apk add --no-cache maven && \
+    mvn clean package -DskipTests && \
+    mvn dependency:copy-dependencies -DoutputDirectory=target/lib
 
-RUN apt install curl inotify-tools file unzip -y
+# Runtime stage - smaller JRE image
+FROM eclipse-temurin:21-jre-alpine
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o "awscliv2.zip"
+# Install runtime dependencies
+RUN apk add --no-cache \
+    aws-cli \
+    bash \
+    inotify-tools \
+    file
 
+# Create directories
+RUN mkdir -p /ocr-input /ocr-output /app/lib
 
-RUN unzip awscliv2.zip
-RUN ./aws/install
+# Copy dependencies first (changes less often = better caching)
+COPY --from=builder /build/target/lib /app/lib
 
-RUN mkdir /ocr-input
-RUN mkdir /ocr-output
+# Copy application jar (changes more frequently)
+COPY --from=builder /build/target/searchable-pdf-1.0.jar /app/app.jar
+
+# Copy scripts
 COPY ./ocr-scripts /ocr-scripts
-COPY target/searchable-pdf-1.0.jar /ocr-scripts/searchable-pdf-1.0.jar
 
+# Create non-root user
+RUN addgroup -g 65538 ocrgroup && \
+    adduser -u 1039 -G ocrgroup -D -s /bin/bash ocruser && \
+    chown -R ocruser:ocrgroup /ocr-scripts /ocr-input /ocr-output /app
 
-RUN addgroup --gid 65538 ocrgroup
-
-# Create a user 'appuser' under 'ocrgroup'
-RUN adduser  --uid 1039 --gid 65538 --disabled-password --gecos "" ocruser
-
-# Chown all the files to the app user.
-RUN chown -R ocruser:ocrgroup /ocr-scripts
-
-# Switch to 'appuser'
 USER ocruser
-
 WORKDIR /ocr-scripts
 
-
-ENTRYPOINT [ "/ocr-scripts/watch-files.sh" ]
+ENTRYPOINT ["/ocr-scripts/watch-files.sh"]

@@ -17,14 +17,17 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.List;
 
+/**
+ * PDF document wrapper for creating searchable PDFs with OCR text overlay.
+ * Modernized with Java 21 features including var keyword and records.
+ */
 public class PDFDocument {
 
-    private final Standard14Fonts.FontName fontname = Standard14Fonts.FontName.COURIER;
-    private final PDFont font = new PDType1Font(fontname);
-
+    private static final Standard14Fonts.FontName FONT_NAME = Standard14Fonts.FontName.COURIER;
+    private final PDFont font = new PDType1Font(FONT_NAME);
     private final PDDocument document;
 
-    public PDFDocument(){
+    public PDFDocument() {
         this.document = new PDDocument();
     }
 
@@ -33,97 +36,92 @@ public class PDFDocument {
     }
 
     public void addText(int pageIndex, List<TextLine> lines) throws IOException {
-        PDPage page = document.getPage(pageIndex);
+        var page = document.getPage(pageIndex);
+        var height = page.getMediaBox().getHeight();
+        var width = page.getMediaBox().getWidth();
 
-        float height = page.getMediaBox().getHeight();
+        try (var contentStream = new PDPageContentStream(document, page, 
+                PDPageContentStream.AppendMode.APPEND, false)) {
+            contentStream.setRenderingMode(RenderingMode.NEITHER);
 
-        float width = page.getMediaBox().getWidth();
+            for (var textLine : lines) {
+                var fontInfo = calculateFontSize(
+                    textLine.text(),
+                    (float) textLine.width() * width,
+                    (float) textLine.height() * height
+                );
 
-        PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, false );
-        contentStream.setRenderingMode(RenderingMode.NEITHER);
-
-        for (TextLine cline : lines){
-            FontInfo fontInfo = calculateFontSize(cline.text, (float)cline.width*width, (float)cline.height*height);
-
-            //System.out.println("FontSize: " + fontInfo.fontSize + " => for text: " + cline.text);
-            contentStream.beginText();
-            contentStream.setFont(this.font, fontInfo.fontSize);
-            contentStream.newLineAtOffset((float)cline.left*width, (float)(height-height*cline.top-fontInfo.textHeight));
-            contentStream.showText(cline.text);
-            contentStream.endText();
+                contentStream.beginText();
+                contentStream.setFont(this.font, fontInfo.fontSize());
+                contentStream.newLineAtOffset(
+                    (float) textLine.left() * width,
+                    height - height * (float) textLine.top() - fontInfo.textHeight()
+                );
+                contentStream.showText(textLine.text());
+                contentStream.endText();
+            }
         }
-
-        contentStream.close();
     }
 
     private FontInfo calculateFontSize(String text, float bbWidth, float bbHeight) throws IOException {
-
-        //PDFont font = PDType1Font.TIMES_ROMAN;
-
         int fontSize = 17;
-        float textWidth = font.getStringWidth(text) / 1000 * fontSize;
-        float textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
+        float textWidth = font.getStringWidth(text) / 1000f * fontSize;
+        float textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000f * fontSize;
 
-        if(textWidth > bbWidth){
-            while(textWidth > bbWidth){
-                fontSize -= 1;
-                textWidth = font.getStringWidth(text) / 1000 * fontSize;
-                textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
+        // Adjust font size to fit within bounding box width
+        if (textWidth > bbWidth) {
+            while (textWidth > bbWidth && fontSize > 1) {
+                fontSize--;
+                textWidth = font.getStringWidth(text) / 1000f * fontSize;
+                textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000f * fontSize;
+            }
+        } else if (textWidth < bbWidth) {
+            while (textWidth < bbWidth) {
+                fontSize++;
+                textWidth = font.getStringWidth(text) / 1000f * fontSize;
+                textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000f * fontSize;
             }
         }
-        else if(textWidth < bbWidth){
-            while(textWidth < bbWidth){
-                fontSize += 1;
-                textWidth = font.getStringWidth(text) / 1000 * fontSize;
-                textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
-            }
-        }
 
-        //System.out.println("Text height before returning font size: " + textHeight);
-
-        FontInfo fi = new FontInfo();
-        fi.fontSize = fontSize;
-        fi.textHeight = textHeight;
-        fi.textWidth = textWidth;
-
-        return fi;
+        return new FontInfo(fontSize, textHeight, textWidth);
     }
 
     public void addPage(BufferedImage image, ImageType imageType, List<TextLine> lines) throws IOException {
+        var width = (float) image.getWidth();
+        var height = (float) image.getHeight();
 
-        float width = image.getWidth();
-        float height = image.getHeight();
-
-        PDRectangle box = new PDRectangle(width, height);
-        PDPage page = new PDPage(box);
+        var box = new PDRectangle(width, height);
+        var page = new PDPage(box);
         page.setMediaBox(box);
         this.document.addPage(page);
 
-        PDImageXObject pdImage;
+        // Create PDF image based on type
+        var pdImage = switch (imageType) {
+            case JPEG -> JPEGFactory.createFromImage(this.document, image);
+            case PNG -> LosslessFactory.createFromImage(this.document, image);
+        };
 
-        if(imageType == ImageType.JPEG){
-            pdImage = JPEGFactory.createFromImage(this.document, image);
+        try (var contentStream = new PDPageContentStream(document, page)) {
+            contentStream.drawImage(pdImage, 0, 0);
+            contentStream.setRenderingMode(RenderingMode.NEITHER);
+
+            for (var textLine : lines) {
+                var fontInfo = calculateFontSize(
+                    textLine.text(),
+                    (float) textLine.width() * width,
+                    (float) textLine.height() * height
+                );
+                
+                contentStream.beginText();
+                contentStream.setFont(this.font, fontInfo.fontSize());
+                contentStream.newLineAtOffset(
+                    (float) textLine.left() * width,
+                    height - height * (float) textLine.top() - fontInfo.textHeight()
+                );
+                contentStream.showText(textLine.text());
+                contentStream.endText();
+            }
         }
-        else {
-            pdImage = LosslessFactory.createFromImage(this.document, image);
-        }
-
-        PDPageContentStream contentStream = new PDPageContentStream(document, page);
-
-        contentStream.drawImage(pdImage, 0, 0);
-
-        contentStream.setRenderingMode(RenderingMode.NEITHER);
-
-        for (TextLine cline : lines){
-            FontInfo fontInfo = calculateFontSize(cline.text, (float)cline.width*width, (float)cline.height*height);
-            contentStream.beginText();
-            contentStream.setFont(this.font, fontInfo.fontSize);
-            contentStream.newLineAtOffset((float)cline.left*width, (float)(height-height*cline.top-fontInfo.textHeight));
-            contentStream.showText(cline.text);
-            contentStream.endText();
-        }
-
-        contentStream.close();
     }
 
     public void save(String path) throws IOException {

@@ -25,7 +25,7 @@ if [  -f "$inputfile" ]; then
     mimetype=$(file --mime-type -b "$inputfile")
     echo "Mimetype: ${mimetype}"
     if [ "$mimetype" = "application/pdf" ]; then
-            java -cp searchable-pdf-1.0.jar OcrRunner "$inputfile" "$outputfile"
+            java -jar /app/app.jar "$inputfile" "$outputfile"
 
             echo 'OCR complete'
     else

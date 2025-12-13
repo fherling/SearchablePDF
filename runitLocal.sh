@@ -1,8 +1,9 @@
 #!/bin/bash
 
-mvn clean install
-
+mvn clean package
 
 inputfile=$1
 outputfile=$2
-java -cp target/searchable-pdf-1.0.jar OcrRunner $inputfile $outputfile
+
+# Run with classpath including dependencies in lib/ directory
+java -jar target/searchable-pdf-1.0.jar "$inputfile" "$outputfile"
