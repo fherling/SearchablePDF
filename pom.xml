@@ -68,7 +68,19 @@
             <version>5.12.2</version>
             <scope>test</scope>
         </dependency>
-
+ <!-- Add these dependencies to your pom.xml file in the <dependencies> section -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.18.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.18.0</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
     <build>

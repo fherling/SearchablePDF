@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,10 +18,12 @@ class OcrPdfFromLocalPdfTest {
     @Disabled("Only for manual testing")
     void doOcr() throws IOException {
 
+
+        Files.deleteIfExists(Path.of("target/ocr-test-result.pdf"));
+
         cut.doOcr("src/test/resources/ocr-test.pdf", "target/ocr-test-result.pdf");
 
-        File file = new File("target/ocr-test-result.pdf");
-        assertTrue(file.exists());
+        assertTrue(Files.exists(Path.of("target/ocr-test-result.pdf")));
 
     }
 }
