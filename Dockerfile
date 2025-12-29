@@ -14,9 +14,8 @@ RUN apk add --no-cache maven && \
 # Runtime stage - smaller JRE image
 FROM eclipse-temurin:21-jre-alpine
 
-# Install runtime dependencies
+# Install runtime dependencies (removed aws-cli as application uses Java AWS SDK)
 RUN apk add --no-cache \
-    aws-cli \
     bash \
     inotify-tools \
     file
