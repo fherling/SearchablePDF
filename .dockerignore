@@ -21,7 +21,7 @@ target/
 # Test files
 src/test/
 
-# Scripts (not needed in build context - will be COPYed explicitly)
+# Local development/build scripts (not needed in container)
 build.sh
 runitLocal.sh
 runitDocker.sh

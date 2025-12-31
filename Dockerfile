@@ -55,8 +55,9 @@ RUN addgroup -g 65538 ocrgroup && \
 USER ocruser
 WORKDIR /ocr-scripts
 
-# Health check to ensure the application is running
+# Health check to ensure the application is running and directories are accessible
+# Checks both that inotifywait is running and that required directories exist
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "inotifywait" > /dev/null || exit 1
+    CMD pgrep -f "inotifywait" > /dev/null && test -d /ocr-input && test -d /ocr-output || exit 1
 
 ENTRYPOINT ["/ocr-scripts/watch-files.sh"]
