@@ -1,0 +1,37 @@
+# Git files
+.git
+.gitignore
+.github
+
+# IDE files
+.idea
+.vscode
+*.iml
+
+# Build artifacts
+target/
+*.class
+*.jar
+!src/**/*.jar
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+src/test/
+
+# Scripts (not needed in build context - will be COPYed explicitly)
+build.sh
+runitLocal.sh
+runitDocker.sh
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*~
