@@ -9,6 +9,7 @@ A Docker-based OCR service that converts PDF files into searchable PDFs using AW
 - Outputs searchable PDFs with embedded text layers
 - Multi-architecture support (amd64, arm64)
 - Runs with non-root user for enhanced security
+- **Optimized Docker image** with minimal Alpine Linux base for security and efficiency
 
 ## Security
 
@@ -62,10 +63,29 @@ chmod 777 /path/to/input /path/to/output
 
 ## Architecture
 
-- **Build Stage**: Uses `eclipse-temurin:21-jdk-alpine` to compile the Java application with Maven
-- **Runtime Stage**: Uses smaller `eclipse-temurin:21-jre-alpine` image for running the application
+### Docker Image Optimization
+
+The Docker image is optimized for minimal size and enhanced security:
+
+- **Multi-stage Build**: Separates build and runtime environments
+- **Build Stage**: Uses `maven:3.9-eclipse-temurin-21-alpine` with pre-installed Maven for efficient builds
+  - Implements dependency caching for faster rebuilds
+  - Only build artifacts are copied to runtime stage
+- **Runtime Stage**: Uses minimal `eclipse-temurin:21-jre-alpine` base image
+  - Alpine Linux base (~5MB) instead of full distributions (~100MB+)
+  - Only essential runtime dependencies: bash, inotify-tools, file
+  - No build tools or package managers in final image
+  - Built-in health check for container monitoring
+- **Security Features**:
+  - Runs as non-root user (UID 1039)
+  - Minimal attack surface with reduced package footprint
+  - No unnecessary development tools in runtime image
+
+### Components
+
 - **File Watcher**: Uses `inotify-tools` to monitor `/ocr-input` for new PDF files
 - **AWS Integration**: Leverages AWS SDK for Java to interact with AWS Textract service
+- **Shell Scripts**: Bash scripts for file processing and workflow orchestration
 
 ## Environment Variables
 
