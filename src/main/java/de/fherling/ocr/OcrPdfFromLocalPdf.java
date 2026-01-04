@@ -60,6 +60,6 @@ public class OcrPdfFromLocalPdf {
             }
         }
 
-        System.out.println("Successfully generated searchable PDF: " + outputDocumentName + " !");
+        System.out.println("Successfully generated searchable PDF: " + outputDocumentName + "!");
     }
 }
