@@ -1,61 +1,118 @@
 # SearchablePDF
 
-Create searchable PDFs by adding an OCR text layer on top of an existing PDF.
+A Docker-based OCR service that converts PDF files into searchable PDFs using AWS Textract.
 
-How it works (high level)
+## Features
 
-- Renders each page of the input PDF to an image (PDFBox)
-- Sends images to AWS Textract (AWS SDK v2)
-- Writes a new PDF with the original page images plus an invisible text overlay (searchable text layer)
+- Watches directories for new PDF files
+- Automatically processes PDFs using AWS Textract OCR
+- Outputs searchable PDFs with embedded text layers
+- Multi-architecture support (amd64, arm64)
+- Runs with non-root user for enhanced security
+- **Optimized Docker image** with minimal Alpine Linux base for security and efficiency
 
-Requirements
+## Security
 
-- Java 21+ (CI uses Temurin 21; Maven Enforcer requires Java >= 21)
-- Maven 3.9+
-- AWS credentials configured for Textract (via the AWS SDK v2 default credential chain)
+### Non-Root User
 
-Build
+The Docker container runs as a non-root user (`ocruser`, UID 1039) for enhanced security. This follows container security best practices by:
+
+- **Preventing privilege escalation**: The application cannot gain root access inside the container
+- **Limiting attack surface**: Even if the application is compromised, the attacker has limited permissions
+- **Following principle of least privilege**: The user only has permissions needed to run the application
+
+The non-root user has ownership of:
+- `/app` - Application JAR and dependencies
+- `/ocr-scripts` - Shell scripts for file processing
+- `/ocr-input` - Input directory for PDF files
+- `/ocr-output` - Output directory for processed PDFs
+
+No root processes run inside the container after startup.
+
+## Docker Usage
+
+### Building the Image
+
+```bash
+docker build -f Dockerfile -t searchablepdf:latest .
+```
+
+### Running the Container
+
+```bash
+docker run -d \
+  -v /path/to/input:/ocr-input \
+  -v /path/to/output:/ocr-output \
+  -e AWS_REGION=eu-central-1 \
+  -e AWS_ACCESS_KEY_ID=your_key \
+  -e AWS_SECRET_ACCESS_KEY=your_secret \
+  searchablepdf:latest
+```
+
+### Volume Permissions
+
+When mounting host directories, ensure the non-root user (UID 1039) has read/write permissions:
+
+```bash
+# Option 1: Set ownership to match container user
+sudo chown -R 1039:1039 /path/to/input /path/to/output
+
+# Option 2: Make directories world-writable (less secure)
+chmod 777 /path/to/input /path/to/output
+```
+
+## Architecture
+
+### Docker Image Optimization
+
+The Docker image is optimized for minimal size and enhanced security:
+
+- **Multi-stage Build**: Separates build and runtime environments
+- **Build Stage**: Uses `maven:3.9-eclipse-temurin-21-alpine` with pre-installed Maven for efficient builds
+  - Implements dependency caching for faster rebuilds
+  - Only build artifacts are copied to runtime stage
+- **Runtime Stage**: Uses minimal `eclipse-temurin:21-jre-alpine` base image
+  - Alpine Linux base (~5MB) instead of full distributions (~100MB+)
+  - Only essential runtime dependencies: bash, inotify-tools, file
+  - No build tools or package managers in final image
+  - Built-in health check for container monitoring
+- **Security Features**:
+  - Runs as non-root user (UID 1039)
+  - Minimal attack surface with reduced package footprint
+  - No unnecessary development tools in runtime image
+
+### Components
+
+- **File Watcher**: Uses `inotify-tools` to monitor `/ocr-input` for new PDF files
+- **AWS Integration**: Leverages AWS SDK for Java to interact with AWS Textract service
+- **Shell Scripts**: Bash scripts for file processing and workflow orchestration
+
+## Environment Variables
+
+- `AWS_REGION` - AWS region for Textract service (e.g., `eu-central-1`)
+- `AWS_ACCESS_KEY_ID` - AWS access key for authentication
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key for authentication
+
+## Development
+
+### Prerequisites
+
+- Java 21 or higher
+- Maven 3.6 or higher
+- Docker (for containerized deployment)
+
+### Building Locally
 
 ```bash
 mvn clean package
 ```
 
-Test
+### Running Locally
 
 ```bash
-mvn clean test
+./runitLocal.sh
 ```
 
-CI parity:
+## License
 
-```bash
-mvn --batch-mode --update-snapshots verify
-```
-
-Run locally
-
-```bash
-java -jar target/searchable-pdf-1.0.jar <input.pdf> <output.pdf>
-```
-
-Docker watcher
-Build the image:
-
-```bash
-docker build -f Dockerfile -t searchablepdf-local:test .
-```
-
-Run the watcher (process PDFs dropped into `./ocr-input`):
-
-```bash
-docker run --rm \
-  -v "$PWD/ocr-input:/ocr-input" \
-  -v "$PWD/ocr-output:/ocr-output" \
-  -e AWS_REGION=eu-central-1 \
-  searchablepdf-local:test
-```
-
-Notes
-
-- The scripts under `ocr-scripts/` are intended for Linux containers (they use `inotifywait` and GNU-style `stat`/`date`).
-- On macOS, run the JAR directly instead of the watcher scripts.
+See the project repository for license information.
