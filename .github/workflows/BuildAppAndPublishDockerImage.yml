@@ -5,7 +5,7 @@ on:
     - cron: '26 14 * * *'
   push:
     branches: [ "main" ]
-    # Publish semver tags as releases.
+    # Build/publish an image on semver tag push.
     tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "main" ]
@@ -86,7 +86,10 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}, ghcr.io/fherling/searchablepdf:latest
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ghcr.io/fherling/searchablepdf:latest
+            ${{ github.ref_type == 'tag' && format('ghcr.io/fherling/searchablepdf:{0}', github.ref_name) || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
