@@ -1,5 +1,6 @@
+---
 applyTo: **
-
+---
 Security best practices for Copilot in this repository (SearchablePDF)
 
 Purpose
