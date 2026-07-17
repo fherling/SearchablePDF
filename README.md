@@ -97,7 +97,7 @@ The Docker image is optimized for minimal size and enhanced security:
 
 ### Prerequisites
 
-- Java 21 or higher
+- Java 25 or higher
 - Maven 3.6 or higher
 - Docker (for containerized deployment)
 

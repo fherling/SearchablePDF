@@ -1,6 +1,6 @@
 # Build stage - compile and package the application
 # Using maven image which includes Maven pre-installed, reducing build time and image layers
-FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.16-eclipse-temurin-25-alpine AS builder
 WORKDIR /build
 
 # Copy Maven files first for better layer caching
@@ -17,7 +17,7 @@ RUN mvn clean package -DskipTests && \
     mvn dependency:copy-dependencies -DoutputDirectory=target/lib
 
 # Runtime stage - smaller JRE image with Alpine Linux for minimal footprint
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 # Add image metadata
 LABEL org.opencontainers.image.title="SearchablePDF" \
