@@ -1,7 +1,7 @@
 # SearchablePDF
 
 Docker-based OCR service that converts PDFs into searchable PDFs (image + invisible
-text layer) using **AWS Textract**. Java 21 / Maven application, packaged into an Alpine
+text layer) using **AWS Textract**. Java 25 / Maven application, packaged into an Alpine
 container that watches a directory and processes PDFs as they arrive.
 
 ## Build, test, run
@@ -14,7 +14,7 @@ container that watches a directory and processes PDFs as they arrive.
   (or `./runitLocal.sh <input.pdf> <output.pdf>`, which builds first)
 - Build the Docker image: `./build.sh` (runs `mvn clean package` then `docker build`)
 
-Requires Java 21+ (enforced by `maven-enforcer-plugin`) and valid AWS credentials in the
+Requires Java 25+ (enforced by `maven-enforcer-plugin`) and valid AWS credentials in the
 environment (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) for any test/run
 that actually calls Textract.
 
@@ -56,7 +56,7 @@ files together:
 
 ## Conventions specific to this codebase
 
-- **Java 21 idioms are expected**: `var` for locals, `record` types (`TextLine`, `FontInfo`),
+- **Java 25 idioms are expected**: `var` for locals, `record` types (`TextLine`, `FontInfo`),
   switch expressions (see `PDFDocument.addPage`), streams over Textract blocks. Match this style.
 - **Textract coordinates are normalized** (0–1 fractions of page width/height). Multiply by
   the page/image dimensions when positioning text — see `PDFDocument.calculateFontSize` /
@@ -70,11 +70,18 @@ files together:
 
 - The image runs as **non-root** `ocruser` (UID 1039); only `/app`, `/ocr-scripts`,
   `/ocr-input`, `/ocr-output` are writable by it. Don't add steps that require root at runtime.
-- Multi-stage Dockerfile: `maven:3.9-eclipse-temurin-21-alpine` build stage →
-  `eclipse-temurin:21-jre-alpine` runtime. Runtime only installs `bash`, `inotify-tools`,
+- Multi-stage Dockerfile: `maven:3.9-eclipse-temurin-25-alpine` build stage →
+  `eclipse-temurin:25-jre-alpine` runtime. Runtime only installs `bash`, `inotify-tools`,
   `file`. Keep the runtime image minimal.
 - CI (`.github/workflows/BuildAppAndPublishDockerImage.yml`) builds `linux/amd64` +
   `linux/arm64/v8`, pushes to `ghcr.io`, and signs images with cosign on non-PR events.
 - **Security rules for handling untrusted PDFs/images and subprocesses are mandatory** and
   documented in `.github/instructions/security.instructions.md` — read it before changing
-  file handling, path construction, subprocess calls, or the Dockerfile.
+  file handling, path construction, subprocess calls, or the Dockerfile. Key rules to apply
+  even without reading that file: (1) resolve/normalize all file paths and confirm they stay
+  inside the dedicated input/output directories — reject absolute paths or `..` segments;
+  (2) never invoke subprocesses with `shell=True` or concatenated command strings — pass
+  arguments as arrays and set timeouts; (3) treat every uploaded PDF/image as malicious —
+  enforce content-type, size, and dimension limits, and disable active content (PDF
+  JavaScript, `/AA` actions, embedded files); (4) never hardcode secrets, and redact
+  secrets/PII from logs; (5) fail closed — reject input when validation is uncertain.
