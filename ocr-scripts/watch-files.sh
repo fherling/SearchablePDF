@@ -4,7 +4,7 @@ echo "Watching directory $directory_to_watch for new files..."
 
 java --version
 
-inotifywait -m -e create -e moved_to --format "%w%f" $directory_to_watch \
+inotifywait -m -e close_write -e moved_to --format "%w%f" $directory_to_watch \
     | while read FILENAME 
         do  
             echo "********************"

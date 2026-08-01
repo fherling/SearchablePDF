@@ -58,6 +58,9 @@ public class OcrPdfFromLocalPdf {
             } finally {
                 pdfDocument.close();
             }
+        } catch (IOException e) {
+            System.err.println("Error processing PDF: " + e.getMessage());
+            throw e;
         }
 
         System.out.println("Successfully generated searchable PDF: " + outputDocumentName);
