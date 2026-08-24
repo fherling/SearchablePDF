@@ -1,6 +1,6 @@
 # Build stage - compile and package the application
 # Using maven image which includes Maven pre-installed, reducing build time and image layers
-FROM maven:3.9.16-eclipse-temurin-25-alpine AS builder
+FROM maven:3-eclipse-temurin-24-alpine AS builder
 WORKDIR /build
 
 # Copy Maven files first for better layer caching
